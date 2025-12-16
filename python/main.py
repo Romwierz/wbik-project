@@ -77,6 +77,13 @@ class Group:
                 return b
         raise ValueError(f"No inverse of {a} in set {self._G}!")
 
+    def check_identity(self):
+        for a in self._G:
+            if self._op(a, self._e) == a:
+                return True
+        raise ValueError(f"{self._e} is not an identity element of set {self._G}!")
+
+
     def check_inverse(self):
         for a in self._G:
             inv = self.inverse(a)
@@ -92,6 +99,7 @@ def main():
     print("e =", group.identity())
     print("|G| =", group.order())
 
+    group.check_identity()
     group.check_inverse()
 
 if __name__=="__main__":
