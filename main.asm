@@ -7,7 +7,7 @@
     EXTRN code(init_LCD,LCD_XY,zapisz_string_LCD,dispACC_LCD)
 
     ORG 8000h
-    jmp start
+    jmp main
     ORG 8500h
 
     num1_lo   EQU 20h
@@ -22,7 +22,7 @@ num1:
 num2:
     DB 02h, 00h
 
-start:
+main:
     lcall init_LCD
 
     lcall add16
@@ -41,11 +41,19 @@ start:
     mov A, R5
     lcall dispACC_LCD
 
+    mov R0, #80h
+    mov R1, #80h
+    lcall shiftleft16
+
     jmp $
 
 label:
     DB 'wynik:#'
 
+;-----------------------------------------
+; add 16-bit values
+; (R5:R4) + C = (R2:R0) + (R3:R1)
+;-----------------------------------------
 add16:
     ; mov low byte of num1 into R0
     mov A, #0
@@ -80,6 +88,22 @@ add16:
     mov A, R2
     addc A, R3
     mov R5, A
+
+    ret
+
+;-----------------------------------------
+; shift left 16-bit value
+; (R1:R0) = (R1:R0) << 1
+;-----------------------------------------
+shiftleft16:
+    clr C ; clear carry flag so it is not rotated into the bit0 of lsb
+    mov A, R0
+    rlc A
+    mov R0, A
+
+    mov A, R1
+    rlc A
+    mov R1, A
 
     ret
 
