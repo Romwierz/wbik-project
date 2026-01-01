@@ -45,6 +45,8 @@ main:
     mov R1, #80h
     lcall shiftleft16
 
+    lcall sub16
+
     jmp $
 
 label:
@@ -92,6 +94,27 @@ add16:
     ret
 
 ;-----------------------------------------
+; subtract 16-bit values
+; (R5:R4) + B = (R1:R0) - (R3:R2)
+;-----------------------------------------
+sub16:
+    ; expected result: (R5:R4) == 00FFh + 1
+    mov R0, #0FEh
+    mov R1, #0FFh
+    mov R2, #0FFh
+    mov R3, #0FFh
+
+    clr C
+    mov A, R1
+    subb A, R3
+    mov R5, A
+
+    mov A, R0
+    subb A, R2
+    mov R4, A
+
+    ret
+
 ; shift left 16-bit value
 ; (R1:R0) = (R1:R0) << 1
 ;-----------------------------------------
