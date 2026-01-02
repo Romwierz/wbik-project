@@ -23,87 +23,41 @@
     ; variable to use in cmp_ge16 subroutine
     cmp_var     EQU 28h
 
-num1:
-    DB 0FFh, 0FFh
-num2:
-    DB 02h, 00h
-
 main:
-    lcall init_LCD
+    lcall   init_LCD
 
-    mov A, R4
-    lcall dispACC_LCD
+    mov     A, R4
+    lcall   dispACC_LCD
 
-    mov     R0, #00h
-    mov     R1, #00h
-    mov     R2, #00h
-    mov     R3, #00h
-    lcall cmp16_ge
+    mov     m_lo, #01h
+    mov     m_hi, #00h
+    lcall   montgomery_mul16
 
-    mov     R0, #02h
-    mov     R1, #02h
-    mov     R2, #02h
-    mov     R3, #02h
-    lcall cmp16_ge
-
-    mov     R0, #02h
-    mov     R1, #00h
+    mov     R0, #0FFh
+    mov     R1, #0FFh
     mov     R2, #01h
     mov     R3, #00h
-    lcall cmp16_ge
+    lcall   add16
 
-    mov     R0, #01h
-    mov     R1, #00h
-    mov     R2, #02h
-    mov     R3, #00h
-    lcall cmp16_ge
-
-    mov     R0, #00h
-    mov     R1, #01h
-    mov     R2, #01h
-    mov     R3, #00h
-    lcall cmp16_ge
-
-    jmp $
+    jmp     $
 
 ;-----------------------------------------
 ; add 16-bit values
-; (R5:R4) + C = (R2:R0) + (R3:R1)
+; A + B = C
+; in:   R1:R0 = a_hi:a_lo
+;       R3:R2 = b_hi:b_lo
+; out:  R5:R4 = c_hi:c_lo + Carry flag
 ;-----------------------------------------
 add16:
-    ; mov low byte of num1 into R0
-    mov A, #0
-    mov DPTR, #num1
-    movc A, @A+DPTR
-    mov R0, A
-
-    ; mov low byte of num2 into R1
-    mov A, #0
-    mov DPTR, #num2
-    movc A, @A+DPTR
-    mov R1, A
-
-    ; mov high byte of num1 into R2
-    mov A, #0
-    mov DPTR, #num1+1
-    movc A, @A+DPTR
-    mov R2, A
-
-    ; mov high byte of num2 into R3
-    mov A, #0
-    mov DPTR, #num2+1
-    movc A, @A+DPTR
-    mov R3, A
-
     ; add low bytes and store in R4
-    mov A, R0
-    add A, R1
-    mov R4, A
+    mov     A, R0
+    add     A, R2
+    mov     R4, A
 
     ; add high bytes with carry and store in R5
-    mov A, R2
-    addc A, R3
-    mov R5, A
+    mov     A, R1
+    addc    A, R3
+    mov     R5, A
 
     ret
 
@@ -124,7 +78,8 @@ sub16:
     subb    A, R3
     mov     R5, A
 
-    mov     A, R0
+    ret
+
     subb    A, R2
     mov     R4, A
 
@@ -132,6 +87,7 @@ sub16:
 
     ret
 
+;-----------------------------------------
 ; shift left 16-bit value
 ; (R1:R0) = (R1:R0) << 1
 ;-----------------------------------------
