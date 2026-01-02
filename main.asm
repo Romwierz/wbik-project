@@ -10,12 +10,15 @@
     jmp main
     ORG 8500h
 
-    num1_lo   EQU 20h
-    num1_hi   EQU 21h
-    num2_lo   EQU 22h
-    num2_hi   EQU 23h
-    result_lo EQU 24h
-    result_hi EQU 25h
+    ; variables to use in montgomery multiplication
+    a_lo       EQU 20h
+    a_hi       EQU 21h
+    b_lo       EQU 22h
+    b_hi       EQU 23h
+    m_lo       EQU 24h
+    m_hi       EQU 25h
+    result_lo  EQU 26h
+    result_hi  EQU 27h
 
 num1:
     DB 0FFh, 0FFh
@@ -25,32 +28,14 @@ num2:
 main:
     lcall init_LCD
 
-    lcall add16
-
-    mov A, #0
-    lcall LCD_XY
-    mov DPTR, #label
-    lcall zapisz_string_LCD
-
-    mov A, #10
-    lcall LCD_XY
     mov A, R4
     lcall dispACC_LCD
-    mov A, #12
-    lcall LCD_XY
-    mov A, R5
-    lcall dispACC_LCD
 
-    mov R0, #80h
-    mov R1, #80h
-    lcall shiftleft16
-
-    lcall sub16
+    mov m_lo, #0E0h
+    mov m_hi, #00h
+    lcall get_bit_cnt16
 
     jmp $
-
-label:
-    DB 'wynik:#'
 
 ;-----------------------------------------
 ; add 16-bit values
@@ -128,6 +113,51 @@ shiftleft16:
     rlc A
     mov R1, A
 
+    ret
+
+; ---------------------------------------------------------
+; get_bit_cnt16
+; in : m_lo, m_hi
+; out: A = number of bits (MSB index + 1)
+; ---------------------------------------------------------
+get_bit_cnt16:
+    push 7
+
+    ; set initial bit count value to 0
+    mov     R7, #0
+    mov     A, m_lo
+    orl     A, m_hi
+    jz      get_bit_cnt16_done ; return if all bytes are zeros
+
+    ; check if m_hi != 0
+    mov     A, m_hi
+    jnz     msb_in_hi
+
+    msb_in_lo:
+    mov     R7, #9 ; max bit count is 8
+    mov     A, m_lo
+
+    find_msb_lo:
+    dec     R7
+    clr     C
+    rlc     A
+    jnc     find_msb_lo ; until bit7 == 0
+
+    ljmp    get_bit_cnt16_done
+
+    msb_in_hi:
+    mov     R7, #17 ; max bit count is 16
+    mov     A, m_hi
+
+    find_msb_hi:
+    dec     R7
+    clr     C
+    rlc     A
+    jnc     find_msb_hi
+
+    get_bit_cnt16_done:
+    mov     A, R7
+    pop     7
     ret
 
 END
