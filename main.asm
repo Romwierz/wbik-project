@@ -11,14 +11,17 @@
     ORG 8500h
 
     ; variables to use in montgomery multiplication
-    a_lo       EQU 20h
-    a_hi       EQU 21h
-    b_lo       EQU 22h
-    b_hi       EQU 23h
-    m_lo       EQU 24h
-    m_hi       EQU 25h
-    result_lo  EQU 26h
-    result_hi  EQU 27h
+    a_lo        EQU 20h
+    a_hi        EQU 21h
+    b_lo        EQU 22h
+    b_hi        EQU 23h
+    m_lo        EQU 24h
+    m_hi        EQU 25h
+    result_lo   EQU 26h
+    result_hi   EQU 27h
+
+    ; variable to use in cmp_ge16 subroutine
+    cmp_var     EQU 28h
 
 num1:
     DB 0FFh, 0FFh
@@ -31,9 +34,35 @@ main:
     mov A, R4
     lcall dispACC_LCD
 
-    mov m_lo, #0E0h
-    mov m_hi, #00h
-    lcall get_bit_cnt16
+    mov     R0, #00h
+    mov     R1, #00h
+    mov     R2, #00h
+    mov     R3, #00h
+    lcall cmp16_ge
+
+    mov     R0, #02h
+    mov     R1, #02h
+    mov     R2, #02h
+    mov     R3, #02h
+    lcall cmp16_ge
+
+    mov     R0, #02h
+    mov     R1, #00h
+    mov     R2, #01h
+    mov     R3, #00h
+    lcall cmp16_ge
+
+    mov     R0, #01h
+    mov     R1, #00h
+    mov     R2, #02h
+    mov     R3, #00h
+    lcall cmp16_ge
+
+    mov     R0, #00h
+    mov     R1, #01h
+    mov     R2, #01h
+    mov     R3, #00h
+    lcall cmp16_ge
 
     jmp $
 
@@ -115,6 +144,52 @@ shiftleft16:
 
     ret
 
+; ---------------------------------------------------------
+; ---------------------------------------------------------
+; cmp16_ge
+; in : R1:R0 = a_hi:a_lo
+;      R3:R2 = b_hi:b_lo
+; out: A = 1 if a >= b, 0 if a < b
+; ---------------------------------------------------------
+cmp16_ge:
+    push    0
+    push    1
+    push    2
+    push    3
+
+    ; compare high bytes
+    mov     A, R1
+    mov     cmp_var, R3
+    cjne    A, cmp_var, check_hi_diff
+    ; compare low bytes
+    mov     A, R0
+    mov     cmp_var, R2
+    cjne    A, cmp_var, check_lo_diff
+    ; if both bytes are equal
+    mov     A, #1
+    ljmp    cmp16_ge_done
+
+    check_hi_diff:
+    jc      a_less ; if carry flag is set, second operand is greater
+    mov     A, #1
+    ljmp    cmp16_ge_done
+
+    check_lo_diff:
+    jc      a_less ; if carry flag is set, second operand is greater
+    mov     A, #1
+    ljmp    cmp16_ge_done
+
+    a_less:
+    mov     A, #0
+
+    cmp16_ge_done:
+    pop     3
+    pop     2
+    pop     1
+    pop     0
+
+    ret
+    
 ; ---------------------------------------------------------
 ; get_bit_cnt16
 ; in : m_lo, m_hi
