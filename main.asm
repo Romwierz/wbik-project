@@ -106,8 +106,10 @@ shiftleft16:
 ; in:   R1:R0 = a_hi:a_lo
 ; out:  R1:R0 = (a_hi:a_lo) >> 1
 ;-----------------------------------------
+; important note:
+; if needed, carry flag must explicitly cleared before shifting operation
+;-----------------------------------------
 shiftright16:
-    clr     C ; clear carry flag so it is not rotated into the bit7 of msb
     mov     A, R1
     rrc     A
     mov     R1, A
